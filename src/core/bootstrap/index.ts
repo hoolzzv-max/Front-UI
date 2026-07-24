@@ -1,8 +1,9 @@
 import { registerEventHandlers } from "./registerEventHandlers";
+import { connectApplication } from "./connectApplication";
 
 let bootstrapped = false;
 
-export function bootstrapApplication() {
+export async function bootstrapApplication() {
   if (bootstrapped) {
     return;
   }
@@ -10,4 +11,6 @@ export function bootstrapApplication() {
   bootstrapped = true;
 
   registerEventHandlers();
+
+  await connectApplication();
 }
