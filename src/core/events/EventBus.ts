@@ -145,6 +145,27 @@ export type WorkspaceEventMap = {
     branch: string;
     files: string[];
   };
+
+  "websocket:status": {
+    status: "idle" | "connecting" | "connected" | "reconnecting" | "disconnected" | "error";
+    url?: string;
+  };
+
+  "websocket:message": {
+    type?: string;
+    payload: unknown;
+    raw: string;
+  };
+
+  "websocket:error": {
+    message: string;
+  };
+
+  "websocket:closed": {
+    code: number;
+    reason: string;
+    wasClean: boolean;
+  };
 };
 
 export const eventBus = new EventBus<WorkspaceEventMap>();
