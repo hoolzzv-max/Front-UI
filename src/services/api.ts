@@ -1,88 +1,113 @@
-export interface ApiResponse<T> {
-  success: boolean;
-
-  data?: T;
-
-  error?: string;
-}
+import {
+  apiClient,
+  type ApiResponse,
+} from "../core/api/ApiClient";
 
 export class ApiService {
-  private baseUrl = "";
+  configure(baseUrl: string) {
+    apiClient.configure({
+      baseUrl,
+    });
+  }
 
-  configure(
-    baseUrl: string,
-  ) {
-    this.baseUrl =
-      baseUrl.replace(/\/$/, "");
+  setAuthToken(token: string) {
+    apiClient.setAuthToken(token);
+  }
+
+  clearAuthToken() {
+    apiClient.clearAuthToken();
   }
 
   async get<T>(
     endpoint: string,
-  ): Promise<ApiResponse<T>> {
-    try {
-      const response =
-        await fetch(
-          `${this.baseUrl}${endpoint}`,
-        );
+    query?: Record<
+      string,
+      string | number | boolean
+    >,
+  ) {
+    const response =
+      await apiClient.get<T>(
+        endpoint,
+        {
+          query,
+        },
+      );
 
-      const data =
-        await response.json();
-
-      return {
-        success: response.ok,
-        data,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Request failed",
-      };
-    }
+    return {
+      success: true,
+      data: response.data,
+      status: response.status,
+    };
   }
 
   async post<T>(
     endpoint: string,
-    body: unknown,
-  ): Promise<ApiResponse<T>> {
-    try {
-      const response =
-        await fetch(
-          `${this.baseUrl}${endpoint}`,
-          {
-            method: "POST",
+    body?: unknown,
+  ) {
+    const response =
+      await apiClient.post<T>(
+        endpoint,
+        body,
+      );
 
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
+    return {
+      success: true,
+      data: response.data,
+      status: response.status,
+    };
+  }
 
-            body: JSON.stringify(
-              body,
-            ),
-          },
-        );
+  async put<T>(
+    endpoint: string,
+    body?: unknown,
+  ) {
+    const response =
+      await apiClient.put<T>(
+        endpoint,
+        body,
+      );
 
-      const data =
-        await response.json();
+    return {
+      success: true,
+      data: response.data,
+      status: response.status,
+    };
+  }
 
-      return {
-        success: response.ok,
-        data,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Request failed",
-      };
-    }
+  async patch<T>(
+    endpoint: string,
+    body?: unknown,
+  ) {
+    const response =
+      await apiClient.patch<T>(
+        endpoint,
+        body,
+      );
+
+    return {
+      success: true,
+      data: response.data,
+      status: response.status,
+    };
+  }
+
+  async delete<T>(
+    endpoint: string,
+  ) {
+    const response =
+      await apiClient.delete<T>(
+        endpoint,
+      );
+
+    return {
+      success: true,
+      data: response.data,
+      status: response.status,
+    };
   }
 }
 
 export const apiService =
   new ApiService();
+
+export type { ApiResponse };
