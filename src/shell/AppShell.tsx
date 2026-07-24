@@ -4,23 +4,17 @@ import { Sidebar, type SidebarActivity } from "./Sidebar";
 import { StatusBar } from "./StatusBar";
 import { BottomDrawer, type BottomDrawerTab } from "./BottomDrawer";
 import { RightPanel } from "./RightPanel";
-import {
-  CommandPalette,
-  type CommandPaletteItem,
-} from "./CommandPalette";
+import { CommandPalette, type CommandPaletteItem } from "./CommandPalette";
 import {
   NotificationCenter,
   type AppNotification,
 } from "./NotificationCenter";
 
-type WorkspaceView = "chat" | "editor" | "diff";
+import { ChatPanel } from "../features/chat/components/ChatPanel";
+import { EditorPanel } from "../features/editor/components/EditorPanel";
+import { KEYBOARD_EVENTS } from "../providers/KeyboardProvider";
 
-const KEYBOARD_EVENTS = {
-  OPEN_COMMAND_PALETTE: "workspace:open-command-palette",
-  TOGGLE_BOTTOM_DRAWER: "workspace:toggle-bottom-drawer",
-  TOGGLE_RIGHT_PANEL: "workspace:toggle-right-panel",
-  FOCUS_PROMPT: "workspace:focus-prompt",
-} as const;
+type WorkspaceView = "chat" | "editor" | "diff";
 
 function isEditableElement(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false;
@@ -46,13 +40,13 @@ function WorkspacePlaceholder({ view }: { view: WorkspaceView }) {
     chat: {
       title: "Chat Workspace",
       description:
-        "هنا سيتم تركيب ChatPanel لاحقًا. هذه المساحة مخصصة للمحادثة مع الوكيل وتشغيل التعليمات ومتابعة النتائج.",
+        "هنا يتم عرض ChatPanel للتواصل مع الوكيل وتشغيل التعليمات ومتابعة النتائج.",
       badge: "Primary",
     },
     editor: {
       title: "Editor Workspace",
       description:
-        "هنا سيتم تركيب EditorPanel و FileTabs لاحقًا لعرض الملفات وتعديلها ومراجعة التغييرات.",
+        "هنا يتم عرض EditorPanel و FileTabs لعرض الملفات وتعديلها ومراجعة التغييرات.",
       badge: "Code",
     },
     diff: {
@@ -61,11 +55,14 @@ function WorkspacePlaceholder({ view }: { view: WorkspaceView }) {
         "هنا سيتم عرض الفروقات بين الملفات قبل وبعد تنفيذ أوامر Aider أو أي Agent آخر.",
       badge: "Review",
     },
-  } satisfies Record<WorkspaceView, {
-    title: string;
-    description: string;
-    badge: string;
-  }>;
+  } satisfies Record<
+    WorkspaceView,
+    {
+      title: string;
+      description: string;
+      badge: string;
+    }
+  >;
 
   const current = content[view];
 
@@ -120,6 +117,7 @@ function ActivityPanel({
             <button
               onClick={() => onWorkspaceViewChange("chat")}
               className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-left text-sm text-neutral-200 hover:border-neutral-700"
+              type="button"
             >
               Chat
               <p className="mt-1 text-xs text-neutral-500">
@@ -130,6 +128,7 @@ function ActivityPanel({
             <button
               onClick={() => onWorkspaceViewChange("editor")}
               className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-left text-sm text-neutral-200 hover:border-neutral-700"
+              type="button"
             >
               Editor
               <p className="mt-1 text-xs text-neutral-500">
@@ -140,11 +139,10 @@ function ActivityPanel({
             <button
               onClick={() => onWorkspaceViewChange("diff")}
               className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-left text-sm text-neutral-200 hover:border-neutral-700"
+              type="button"
             >
               Diff
-              <p className="mt-1 text-xs text-neutral-500">
-                مراجعة التغييرات
-              </p>
+              <p className="mt-1 text-xs text-neutral-500">مراجعة التغييرات</p>
             </button>
           </div>
         )}
@@ -186,6 +184,13 @@ function ActivityPanel({
       </div>
     </aside>
   );
+}
+
+function WorkspaceContent({ view }: { view: WorkspaceView }) {
+  if (view === "chat") return <ChatPanel />;
+  if (view === "editor") return <EditorPanel />;
+
+  return <WorkspacePlaceholder view="diff" />;
 }
 
 export function AppShell() {
@@ -316,10 +321,12 @@ export function AppShell() {
       KEYBOARD_EVENTS.OPEN_COMMAND_PALETTE,
       handleCustomOpenCommandPalette,
     );
+
     window.addEventListener(
       KEYBOARD_EVENTS.TOGGLE_BOTTOM_DRAWER,
       handleCustomToggleBottomDrawer,
     );
+
     window.addEventListener(
       KEYBOARD_EVENTS.TOGGLE_RIGHT_PANEL,
       handleCustomToggleRightPanel,
@@ -330,10 +337,12 @@ export function AppShell() {
         KEYBOARD_EVENTS.OPEN_COMMAND_PALETTE,
         handleCustomOpenCommandPalette,
       );
+
       window.removeEventListener(
         KEYBOARD_EVENTS.TOGGLE_BOTTOM_DRAWER,
         handleCustomToggleBottomDrawer,
       );
+
       window.removeEventListener(
         KEYBOARD_EVENTS.TOGGLE_RIGHT_PANEL,
         handleCustomToggleRightPanel,
@@ -342,30 +351,12 @@ export function AppShell() {
   }, [openCommandPalette, toggleBottomDrawer, toggleRightPanel]);
 
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
+    const handleWorkspaceShortcuts = (event: KeyboardEvent) => {
       if (isEditableElement(event.target)) return;
 
       const isMac = isMacPlatform();
       const modKey = isMac ? event.metaKey : event.ctrlKey;
       const key = event.key.toLowerCase();
-
-      if (modKey && event.shiftKey && key === "p") {
-        event.preventDefault();
-        openCommandPalette();
-        return;
-      }
-
-      if (modKey && key === "j") {
-        event.preventDefault();
-        toggleBottomDrawer();
-        return;
-      }
-
-      if (modKey && event.shiftKey && key === "r") {
-        event.preventDefault();
-        toggleRightPanel();
-        return;
-      }
 
       if (modKey && event.shiftKey && key === "1") {
         event.preventDefault();
@@ -385,12 +376,12 @@ export function AppShell() {
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleWorkspaceShortcuts);
 
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keydown", handleWorkspaceShortcuts);
     };
-  }, [openCommandPalette, toggleBottomDrawer, toggleRightPanel]);
+  }, []);
 
   const unreadNotificationsCount = notifications.filter(
     (item) => item.unread,
@@ -442,7 +433,7 @@ export function AppShell() {
                 </div>
 
                 <div className="min-h-0 flex-1">
-                  <WorkspacePlaceholder view={workspaceView} />
+                  <WorkspaceContent view={workspaceView} />
                 </div>
               </div>
 
