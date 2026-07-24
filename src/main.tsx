@@ -6,7 +6,7 @@ import "./index.css";
 
 import { bootstrapApplication } from "./core/bootstrap";
 
-bootstrapApplication();
+await bootstrapApplication();
 
 ReactDOM.createRoot(
   document.getElementById("root")!,
