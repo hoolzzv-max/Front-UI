@@ -1,4 +1,5 @@
 import { FileExplorer } from "../features/explorer/components/FileExplorer";
+import { TasksPanel } from "../features/tasks/components/TasksPanel";
 import type { SidebarActivity } from "./Sidebar";
 
 export type WorkspaceView =
@@ -42,22 +43,6 @@ function GitPanelPlaceholder() {
         <p className="mt-2 text-xs leading-6 text-neutral-500">
           Git feature has not been
           connected yet.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function TasksPanelPlaceholder() {
-  return (
-    <div className="p-3">
-      <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-3">
-        <h3 className="text-sm font-medium text-neutral-200">
-          Active Tasks
-        </h3>
-
-        <p className="mt-2 text-xs leading-6 text-neutral-500">
-          No active tasks.
         </p>
       </div>
     </div>
@@ -110,7 +95,7 @@ export function ActivityPanel({
 
         {activeActivity ===
           "tasks" && (
-          <TasksPanelPlaceholder />
+          <TasksPanel />
         )}
       </div>
     </aside>
