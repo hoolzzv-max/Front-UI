@@ -16,8 +16,7 @@ import { ChatPanel } from "../features/chat/components/ChatPanel";
 import { EditorPanel } from "../features/editor/components/EditorPanel";
 import { FileExplorer } from "../features/explorer/components/FileExplorer";
 import { PromptComposer } from "../features/prompt/components/PromptComposer";
-
-type WorkspaceView = "chat" | "editor" | "diff";
+import { ActivityPanel, type WorkspaceView } from "./ActivityPanel";
 
 const KEYBOARD_EVENTS = {
   OPEN_COMMAND_PALETTE: "workspace:open-command-palette",
@@ -93,102 +92,6 @@ function WorkspacePlaceholder({ view }: { view: WorkspaceView }) {
         </p>
       </div>
     </div>
-  );
-}
-
-function ActivityPanel({
-  activeActivity,
-  onWorkspaceViewChange,
-}: {
-  activeActivity: SidebarActivity;
-  onWorkspaceViewChange: (view: WorkspaceView) => void;
-}) {
-  const titleMap: Record<SidebarActivity, string> = {
-    explorer: "Explorer",
-    search: "Search",
-    git: "Source Control",
-    tasks: "Tasks",
-  };
-
-  return (
-    <aside className="hidden w-72 shrink-0 border-r border-neutral-800 bg-neutral-950 md:block">
-      <div className="border-b border-neutral-800 px-4 py-3">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
-          {titleMap[activeActivity]}
-        </h2>
-      </div>
-
-      <div className="p-3">
-        {activeActivity === "explorer" && (
-          <div className="space-y-2">
-            <button
-              onClick={() => onWorkspaceViewChange("chat")}
-              className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-left text-sm text-neutral-200 hover:border-neutral-700"
-            >
-              Chat
-              <p className="mt-1 text-xs text-neutral-500">
-                واجهة المحادثة الأساسية
-              </p>
-            </button>
-
-            <button
-              onClick={() => onWorkspaceViewChange("editor")}
-              className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-left text-sm text-neutral-200 hover:border-neutral-700"
-            >
-              Editor
-              <p className="mt-1 text-xs text-neutral-500">
-                محرر الملفات والكود
-              </p>
-            </button>
-
-            <button
-              onClick={() => onWorkspaceViewChange("diff")}
-              className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-left text-sm text-neutral-200 hover:border-neutral-700"
-            >
-              Diff
-              <p className="mt-1 text-xs text-neutral-500">
-                مراجعة التغييرات
-              </p>
-            </button>
-          </div>
-        )}
-
-        {activeActivity === "search" && (
-          <div className="space-y-3">
-            <input
-              placeholder="Search files, commands, logs..."
-              className="h-9 w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 text-sm text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-blue-500"
-            />
-
-            <p className="text-xs leading-6 text-neutral-500">
-              سيتم ربط البحث لاحقًا بالملفات، السجلات، والمهام.
-            </p>
-          </div>
-        )}
-
-        {activeActivity === "git" && (
-          <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-3">
-            <h3 className="text-sm font-medium text-neutral-200">
-              Repository
-            </h3>
-            <p className="mt-2 text-xs leading-6 text-neutral-500">
-              لا يوجد Git provider متصل حاليًا. سيتم تركيب GitPanel لاحقًا.
-            </p>
-          </div>
-        )}
-
-        {activeActivity === "tasks" && (
-          <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-3">
-            <h3 className="text-sm font-medium text-neutral-200">
-              Active Tasks
-            </h3>
-            <p className="mt-2 text-xs leading-6 text-neutral-500">
-              لا توجد مهام نشطة الآن. سيتم تركيب TasksPanel لاحقًا.
-            </p>
-          </div>
-        )}
-      </div>
-    </aside>
   );
 }
 
