@@ -15,6 +15,7 @@ import {
 import { ChatPanel } from "../features/chat/components/ChatPanel";
 import { EditorPanel } from "../features/editor/components/EditorPanel";
 import { FileExplorer } from "../features/explorer/components/FileExplorer";
+import { PromptComposer } from "../features/prompt/components/PromptComposer";
 
 type WorkspaceView = "chat" | "editor" | "diff";
 
@@ -464,6 +465,8 @@ export function AppShell() {
             )}
           </main>
         </div>
+
+        <PromptComposer />
 
         <StatusBar
           status="Ready"
