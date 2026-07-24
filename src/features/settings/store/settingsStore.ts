@@ -4,6 +4,10 @@ import type {
   ApplicationSettings,
 } from "../types";
 
+import { localStorageDriver } from "../../../core/storage/LocalStorage";
+
+const STORAGE_KEY = "app-settings";
+
 const DEFAULT_SETTINGS: ApplicationSettings = {
   theme: "dark",
 
@@ -41,39 +45,72 @@ type SettingsState = {
 
 export const useSettingsStore =
   create<SettingsState>((set) => ({
-    settings: DEFAULT_SETTINGS,
+    settings:
+      localStorageDriver.get(
+        STORAGE_KEY,
+        DEFAULT_SETTINGS,
+      ),
 
     updateSettings: (patch) => {
-      set((state) => ({
-        settings: {
+      set((state) => {
+        const nextSettings = {
           ...state.settings,
           ...patch,
-        },
-      }));
+        };
+
+        localStorageDriver.set(
+          STORAGE_KEY,
+          nextSettings,
+        );
+
+        return {
+          settings: nextSettings,
+        };
+      });
     },
 
     updateConnection: (patch) => {
-      set((state) => ({
-        settings: {
+      set((state) => {
+        const nextSettings = {
           ...state.settings,
+
           connection: {
             ...state.settings.connection,
             ...patch,
           },
-        },
-      }));
+        };
+
+        localStorageDriver.set(
+          STORAGE_KEY,
+          nextSettings,
+        );
+
+        return {
+          settings: nextSettings,
+        };
+      });
     },
 
     updateEditor: (patch) => {
-      set((state) => ({
-        settings: {
+      set((state) => {
+        const nextSettings = {
           ...state.settings,
+
           editor: {
             ...state.settings.editor,
             ...patch,
           },
-        },
-      }));
+        };
+
+        localStorageDriver.set(
+          STORAGE_KEY,
+          nextSettings,
+        );
+
+        return {
+          settings: nextSettings,
+        };
+      });
     },
 
     reset: () => {
