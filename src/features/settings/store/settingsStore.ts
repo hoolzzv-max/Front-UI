@@ -5,6 +5,7 @@ import type {
 } from "../types";
 
 import { localStorageDriver } from "../../../core/storage/LocalStorage";
+import { aiderService } from "../../../services/aider";
 
 const STORAGE_KEY = "app-settings";
 
@@ -27,6 +28,11 @@ const DEFAULT_SETTINGS: ApplicationSettings = {
 
 type SettingsState = {
   settings: ApplicationSettings;
+  connectionStatus:
+    | "idle"
+    | "connecting"
+    | "connected"
+    | "failed";
 
   updateSettings: (
     patch: Partial<ApplicationSettings>,
@@ -40,6 +46,8 @@ type SettingsState = {
     patch: Partial<ApplicationSettings["editor"]>,
   ) => void;
 
+  testConnection: () => Promise<void>;
+
   reset: () => void;
 };
 
@@ -50,6 +58,8 @@ export const useSettingsStore =
         STORAGE_KEY,
         DEFAULT_SETTINGS,
       ),
+
+    connectionStatus: "idle",
 
     updateSettings: (patch) => {
       set((state) => {
@@ -113,9 +123,34 @@ export const useSettingsStore =
       });
     },
 
+    testConnection: async () => {
+      set({
+        connectionStatus:
+          "connecting",
+      });
+
+      try {
+        const result =
+          await aiderService.getStatus();
+
+        set({
+          connectionStatus:
+            result.success
+              ? "connected"
+              : "failed",
+        });
+      } catch {
+        set({
+          connectionStatus:
+            "failed",
+        });
+      }
+    },
+
     reset: () => {
       set({
         settings: DEFAULT_SETTINGS,
+        connectionStatus: "idle",
       });
     },
   }));
