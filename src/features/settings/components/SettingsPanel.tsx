@@ -1,14 +1,16 @@
 import { Save } from "lucide-react";
 
-import { useSettings } from "../hooks/useSettings";
+import { useSettingsStore } from "../store/settingsStore";
 
 export function SettingsPanel() {
   const {
     settings,
+    connectionStatus,
+    testConnection,
     updateConnection,
     updateEditor,
     updateSettings,
-  } = useSettings();
+  } = useSettingsStore();
 
   return (
     <div className="h-full overflow-auto bg-neutral-950 p-4">
@@ -74,6 +76,25 @@ export function SettingsPanel() {
               placeholder="WebSocket URL"
               className="w-full rounded-xl border border-neutral-800 bg-neutral-900 p-3"
             />
+          </div>
+
+          {/* Test Connection Button */}
+          <div className="flex items-center gap-3 mt-4">
+            <button
+              type="button"
+              onClick={testConnection}
+              disabled={connectionStatus === "connecting"}
+              className="rounded-xl bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+            >
+              {connectionStatus === "connecting" ? "Testing..." : "Test Connection"}
+            </button>
+
+            <span className="text-sm text-neutral-400">
+              {connectionStatus === "idle" && "⚪ Not tested"}
+              {connectionStatus === "connecting" && "🔄 Connecting..."}
+              {connectionStatus === "connected" && "🟢 Connected"}
+              {connectionStatus === "failed" && "🔴 Failed"}
+            </span>
           </div>
         </section>
 
