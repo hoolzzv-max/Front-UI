@@ -11,7 +11,7 @@ export function PromptComposer() {
     target,
     setValue,
     setTarget,
-    submit,
+    sendToAider,
   } = usePrompt();
 
   return (
@@ -63,7 +63,9 @@ export function PromptComposer() {
 
             <button
               type="button"
-              onClick={() => submit()}
+              onClick={() => {
+                void sendToAider();
+              }}
               className="m-1 flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white transition hover:bg-blue-500"
             >
               <Send size={15} />
