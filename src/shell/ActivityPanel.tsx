@@ -1,5 +1,6 @@
 import { FileExplorer } from "../features/explorer/components/FileExplorer";
 import { TasksPanel } from "../features/tasks/components/TasksPanel";
+import { GitPanel } from "../features/git/components/GitPanel";
 import type { SidebarActivity } from "./Sidebar";
 
 export type WorkspaceView =
@@ -26,23 +27,6 @@ function SearchPanel() {
         <p className="text-xs leading-6 text-neutral-500">
           Search integration will be
           connected later.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function GitPanelPlaceholder() {
-  return (
-    <div className="p-3">
-      <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-3">
-        <h3 className="text-sm font-medium text-neutral-200">
-          Repository
-        </h3>
-
-        <p className="mt-2 text-xs leading-6 text-neutral-500">
-          Git feature has not been
-          connected yet.
         </p>
       </div>
     </div>
@@ -90,7 +74,7 @@ export function ActivityPanel({
 
         {activeActivity ===
           "git" && (
-          <GitPanelPlaceholder />
+          <GitPanel />
         )}
 
         {activeActivity ===
