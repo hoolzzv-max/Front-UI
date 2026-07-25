@@ -1,11 +1,7 @@
 import { apiService } from "./api";
 import type {
-  AiderApplyRequest,
-  AiderApplyResponse,
-  AiderCancelResponse,
   AiderPromptRequest,
   AiderPromptResponse,
-  AiderStatus,
 } from "../contracts";
 
 export type AiderConnectionStatus = "unknown" | "online" | "offline";
@@ -53,7 +49,8 @@ export class AiderService {
    * @returns Promise with the service status
    */
   async getStatus(): Promise<AiderStatusLocal> {
-    return apiService.get<AiderStatusLocal>("/aider/status");
+    const response = await apiService.get<AiderStatusLocal>("/aider/status");
+    return response.data;
   }
 
   /**
@@ -62,7 +59,8 @@ export class AiderService {
    * @returns Promise with the prompt response
    */
   async sendPrompt(payload: AiderPromptRequest): Promise<AiderPromptResponse> {
-    return apiService.post<AiderPromptResponse>("/aider/chat", payload);
+    const response = await apiService.post<AiderPromptResponse>("/aider/chat", payload);
+    return response.data;
   }
 
   /**
@@ -71,7 +69,8 @@ export class AiderService {
    * @returns Promise with the apply response
    */
   async applyChanges(payload: AiderApplyRequestLocal): Promise<AiderApplyResponseLocal> {
-    return apiService.post<AiderApplyResponseLocal>("/aider/apply", payload);
+    const response = await apiService.post<AiderApplyResponseLocal>("/aider/apply", payload);
+    return response.data;
   }
 
   /**
@@ -80,7 +79,8 @@ export class AiderService {
    * @returns Promise with the cancellation response
    */
   async cancelTask(taskId: string): Promise<AiderCancelResponseLocal> {
-    return apiService.post<AiderCancelResponseLocal>(`/aider/tasks/${taskId}/cancel`, {});
+    const response = await apiService.post<AiderCancelResponseLocal>(`/aider/tasks/${taskId}/cancel`, {});
+    return response.data;
   }
 
   /**
@@ -90,7 +90,7 @@ export class AiderService {
   async healthCheck(): Promise<boolean> {
     try {
       const response = await this.getStatus();
-      return response.success === true;
+      return response.status === "online";
     } catch {
       return false;
     }

@@ -134,7 +134,7 @@ export const usePromptStore =
           });
 
         const message =
-          response.data?.message ??
+          response.message ??
           "No response received.";
 
         chatStore.addMessage({

@@ -1,5 +1,5 @@
 export * from "./chat";
-export * from "./messages";
+export { MOCK_MESSAGES as ADDITIONAL_MOCK_MESSAGES } from "./messages";
 
 export * from "./files";
 

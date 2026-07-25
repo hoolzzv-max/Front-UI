@@ -1,7 +1,10 @@
 import {
   apiClient,
   type ApiResponse,
+  type ApiRequestOptions,
 } from "../core/api/ApiClient";
+
+type RequestPayload = object | unknown[] | string | number | boolean | null;
 
 export class ApiService {
   configure(baseUrl: string) {
@@ -42,7 +45,7 @@ export class ApiService {
 
   async post<T>(
     endpoint: string,
-    body?: unknown,
+    body?: RequestPayload,
   ) {
     const response =
       await apiClient.post<T>(
@@ -59,7 +62,7 @@ export class ApiService {
 
   async put<T>(
     endpoint: string,
-    body?: unknown,
+    body?: RequestPayload,
   ) {
     const response =
       await apiClient.put<T>(
@@ -76,7 +79,7 @@ export class ApiService {
 
   async patch<T>(
     endpoint: string,
-    body?: unknown,
+    body?: RequestPayload,
   ) {
     const response =
       await apiClient.patch<T>(
@@ -110,4 +113,4 @@ export class ApiService {
 export const apiService =
   new ApiService();
 
-export type { ApiResponse };
+export type { ApiResponse, ApiRequestOptions };
