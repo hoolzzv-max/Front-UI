@@ -33,7 +33,7 @@ export class ConnectionManager {
   ) {
     this.state = {
       ...this.state,
-      state,
+      [service]: state,
     };
 
     eventBus.emit("websocket:message", {
@@ -100,12 +100,12 @@ export class ConnectionManager {
 
       this.setState(
         "aider",
-        result.success
+        result.status === "online"
           ? "connected"
           : "failed",
       );
 
-      return result.success;
+      return result.status === "online";
     } catch {
       this.setState("aider", "failed");
 

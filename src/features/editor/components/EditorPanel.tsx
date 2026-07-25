@@ -1,6 +1,6 @@
 import Editor from "@monaco-editor/react";
 import { FileCode2, Save } from "lucide-react";
-import { EDITOR_CONFIG } from "../../../../config/editor";
+import { EDITOR_CONFIG } from "../../../config/editor";
 import { useEditor } from "../hooks/useEditor";
 import { FileTabs } from "./FileTabs";
 

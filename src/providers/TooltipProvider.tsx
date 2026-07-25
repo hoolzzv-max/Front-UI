@@ -254,12 +254,12 @@ export function Tooltip({
   const setRef = (node: HTMLElement | null) => {
     triggerRef.current = node;
 
-    const childRef = child.ref;
+    const childRef = (child as { ref?: React.Ref<HTMLElement> | null }).ref;
 
     if (typeof childRef === "function") {
       childRef(node);
-    } else if (childRef && "current" in childRef) {
-      childRef.current = node;
+    } else if (childRef && typeof childRef === "object" && "current" in childRef) {
+      (childRef as React.MutableRefObject<HTMLElement | null>).current = node;
     }
   };
 

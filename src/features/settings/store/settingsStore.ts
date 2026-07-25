@@ -135,7 +135,7 @@ export const useSettingsStore =
 
         set({
           connectionStatus:
-            result.success
+            result.status === "online"
               ? "connected"
               : "failed",
         });
