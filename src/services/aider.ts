@@ -1,8 +1,12 @@
 import { apiService } from "./api";
-import type {
-  AiderPromptRequest,
-  AiderPromptResponse,
-} from "../contracts";
+import type { AiderPromptRequest, AiderPromptResponse } from "../contracts";
+
+const API_BASE = "https://aider-production-05b5.up.railway.app";
+
+// تهيئة ApiClient
+apiService.configure(API_BASE);
+const token = import.meta.env.VITE_AGENT_API_TOKEN;
+if (token) apiService.setAuthToken(token);
 
 export type AiderConnectionStatus = "unknown" | "online" | "offline";
 
@@ -44,53 +48,86 @@ export interface AiderCancelResponseLocal {
 }
 
 export class AiderService {
-  /**
-   * Get the current status of the Aider service
-   * @returns Promise with the service status
-   */
+  private currentRepoId: string | null = null;
+
   async getStatus(): Promise<AiderStatusLocal> {
-    const response = await apiService.get<AiderStatusLocal>("/aider/status");
-    return response.data;
+    try {
+      const res = await apiService.get<{ status: string; service: string }>("/health");
+      const ver = await apiService.get<{ aider_version: string }>("/version");
+
+      return {
+        status: res.data.status === "ok" ? "online" : "offline",
+        version: ver.data.aider_version,
+        model: "openai/gpt-4o-mini",
+        workspace: "/workspace",
+      };
+    } catch {
+      return { status: "offline" };
+    }
   }
 
-  /**
-   * Send a prompt to Aider for processing
-   * @param payload - The prompt request payload using the contract types
-   * @returns Promise with the prompt response
-   */
   async sendPrompt(payload: AiderPromptRequest): Promise<AiderPromptResponse> {
-    const response = await apiService.post<AiderPromptResponse>("/aider/chat", payload);
-    return response.data;
+    // إنشاء مستودع إذا لم يكن موجوداً
+    if (!this.currentRepoId) {
+      const repo = await apiService.post<{ id: string }>("/repositories", {
+        url: payload.context || "https://github.com/user/repo",
+        branch: "main",
+      });
+      this.currentRepoId = repo.data.id;
+    }
+
+    // إرسال المهمة
+    const job = await apiService.post<{ id: string }>("/jobs", {
+      repository_id: this.currentRepoId,
+      message: payload.prompt,
+    });
+
+    return {
+      success: true,
+      message: `Job started: ${job.data.id}`,
+      taskId: job.data.id,
+    };
   }
 
-  /**
-   * Apply changes using Aider with automatic commit option
-   * @param payload - The apply request payload
-   * @returns Promise with the apply response
-   */
   async applyChanges(payload: AiderApplyRequestLocal): Promise<AiderApplyResponseLocal> {
-    const response = await apiService.post<AiderApplyResponseLocal>("/aider/apply", payload);
-    return response.data;
+    if (!this.currentRepoId) {
+      const repo = await apiService.post<{ id: string }>("/repositories", {
+        url: "https://github.com/user/repo",
+        branch: "main",
+      });
+      this.currentRepoId = repo.data.id;
+    }
+
+    const job = await apiService.post<{ id: string }>("/jobs", {
+      repository_id: this.currentRepoId,
+      message: payload.prompt,
+    });
+
+    return {
+      success: true,
+      message: `Changes applied: ${job.data.id}`,
+    };
   }
 
-  /**
-   * Cancel a running Aider task
-   * @param taskId - The ID of the task to cancel
-   * @returns Promise with the cancellation response
-   */
   async cancelTask(taskId: string): Promise<AiderCancelResponseLocal> {
-    const response = await apiService.post<AiderCancelResponseLocal>(`/aider/tasks/${taskId}/cancel`, {});
-    return response.data;
+    const res = await apiService.post<{ message: string; job_id: string }>(
+      `/jobs/${taskId}/cancel`
+    );
+    return {
+      success: true,
+      taskId: res.data.job_id,
+    };
   }
 
-  /**
-   * Perform a health check on the Aider service
-   * @returns Promise with boolean indicating if service is healthy
-   */
+  async getJobLogs(jobId: string): Promise<string> {
+    const res = await apiService.get<{ logs: string }>(`/jobs/${jobId}/logs`);
+    return res.data.logs;
+  }
+
   async healthCheck(): Promise<boolean> {
     try {
-      const response = await this.getStatus();
-      return response.status === "online";
+      const status = await this.getStatus();
+      return status.status === "online";
     } catch {
       return false;
     }
