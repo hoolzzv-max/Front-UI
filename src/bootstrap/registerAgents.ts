@@ -1,27 +1,31 @@
 // ============================================================
-// registerAgents — called once at app startup.
-// This is the ONLY place that imports specific adapter classes.
+// registerAgents — called once at app startup (bootstrap).
+// This is the ONLY file that imports specific adapter classes.
+//
+// Active adapter selection at boot:
+//   - Always register both adapters.
+//   - Start with "mock" as the safe default.
+//   - connectApplication() will switch to "current" when a real
+//     agentUrl is found in saved settings or env vars.
 // ============================================================
 
 import { agentRegistry } from "../agents/core/registry";
 import { CurrentAgentAdapter } from "../agents/adapters/current";
 import { MockAgentAdapter } from "../agents/adapters/mock";
 
-const IS_DEV = import.meta.env.DEV;
-
 export function registerAgents(): void {
-  // Always register the mock adapter (available for testing)
+  // Register mock first so it becomes the initial default
   agentRegistry.register(new MockAgentAdapter());
 
-  // Register the real adapter — it becomes active if registered last
-  // (registry sets activeId to the first registered; we override below)
+  // Register real adapter (does NOT become active — mock stays active by default)
   agentRegistry.register(new CurrentAgentAdapter());
 
-  // Prefer real adapter in production; fall back to mock in dev if no URL configured
-  const apiUrl = import.meta.env.VITE_AGENT_API_URL ?? "";
-  if (IS_DEV && !apiUrl) {
-    agentRegistry.setActive("mock");
-  } else {
+  // If an API URL is present in the environment at boot time, activate "current"
+  // immediately so we don't start in mock mode unnecessarily.
+  // connectApplication() will also do this from saved settings after this call.
+  const envApiUrl = (import.meta.env.VITE_AGENT_API_URL ?? "").trim();
+  if (envApiUrl) {
     agentRegistry.setActive("current");
   }
+  // else: mock stays active; connectApplication() may switch later
 }
