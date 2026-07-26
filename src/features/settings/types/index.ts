@@ -1,14 +1,12 @@
+import type { AgentTransportType } from "@/agents";
+
 export type ThemeMode = "dark" | "light" | "system";
 
 export interface ConnectionSettings {
-  /** Base HTTP URL of the agent backend */
-  agentUrl: string;
-  /** WebSocket URL for streaming (optional) */
+  apiUrl: string;
   websocketUrl: string;
-  /** Bearer auth token (optional) */
   token: string;
-  /** Transport preference */
-  transport: "http" | "websocket" | "sse";
+  transportType: AgentTransportType;
 }
 
 export interface EditorSettings {

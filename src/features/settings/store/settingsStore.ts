@@ -1,19 +1,21 @@
 import { create } from "zustand";
+
 import type { ApplicationSettings } from "../types";
-import { localStorageDriver } from "../../../core/storage/LocalStorage";
-import { agentService } from "../../../agents";
-import { agentRegistry } from "../../../agents/core/registry";
+import { localStorageDriver } from "@/core/storage/LocalStorage";
+import { agentService } from "@/agents";
 
 const STORAGE_KEY = "app-settings";
 
 const DEFAULT_SETTINGS: ApplicationSettings = {
   theme: "dark",
+
   connection: {
-    agentUrl: import.meta.env.VITE_AGENT_API_URL ?? "",
-    websocketUrl: import.meta.env.VITE_AGENT_WS_URL ?? "",
+    apiUrl: import.meta.env.VITE_API_URL ?? "",
+    websocketUrl: import.meta.env.VITE_WS_URL ?? "",
     token: import.meta.env.VITE_AGENT_API_TOKEN ?? "",
-    transport: "http",
+    transportType: "http",
   },
+
   editor: {
     fontSize: 14,
     wordWrap: true,
@@ -22,40 +24,24 @@ const DEFAULT_SETTINGS: ApplicationSettings = {
   },
 };
 
+export type ConnectionStatus =
+  | "idle"
+  | "connecting"
+  | "connected"
+  | "failed";
+
 type SettingsState = {
   settings: ApplicationSettings;
-  connectionStatus: "idle" | "connecting" | "connected" | "failed";
+  connectionStatus: ConnectionStatus;
 
   updateSettings: (patch: Partial<ApplicationSettings>) => void;
   updateConnection: (patch: Partial<ApplicationSettings["connection"]>) => void;
   updateEditor: (patch: Partial<ApplicationSettings["editor"]>) => void;
+
   testConnection: () => Promise<void>;
-  applyConnectionToAgent: () => void;
+  applyAndConnect: () => Promise<void>;
   reset: () => void;
 };
-
-/**
- * Select the correct adapter based on whether a real URL is configured,
- * then configure it with the current settings.
- * Call this before any agentService usage so the right adapter is active.
- */
-function selectAndConfigureAdapter(connection: ApplicationSettings["connection"]) {
-  const hasRealUrl = connection.agentUrl.trim().length > 0;
-
-  // Switch adapter: real URL → "current", no URL → "mock"
-  const targetId = hasRealUrl ? "current" : "mock";
-  if (agentRegistry.hasAdapter(targetId)) {
-    agentRegistry.setActive(targetId);
-  }
-
-  if (hasRealUrl) {
-    agentService.configure({
-      apiUrl: connection.agentUrl.trim(),
-      websocketUrl: connection.websocketUrl.trim() || undefined,
-      token: connection.token.trim() || undefined,
-    });
-  }
-}
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
   settings: localStorageDriver.get(STORAGE_KEY, DEFAULT_SETTINGS),
@@ -91,19 +77,35 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     });
   },
 
-  applyConnectionToAgent: () => {
-    const { connection } = get().settings;
-    selectAndConfigureAdapter(connection);
-  },
-
   testConnection: async () => {
-    const { connection } = get().settings;
-    // Apply adapter selection + config before testing
-    selectAndConfigureAdapter(connection);
+    const { settings } = get();
     set({ connectionStatus: "connecting" });
     try {
-      const online = await agentService.testConnection();
-      set({ connectionStatus: online ? "connected" : "failed" });
+      const status = await agentService.testConnection({
+        apiUrl: settings.connection.apiUrl,
+        websocketUrl: settings.connection.websocketUrl || undefined,
+        token: settings.connection.token || undefined,
+        transportType: settings.connection.transportType,
+      });
+      set({
+        connectionStatus: status.status === "connected" ? "connected" : "failed",
+      });
+    } catch {
+      set({ connectionStatus: "failed" });
+    }
+  },
+
+  applyAndConnect: async () => {
+    const { settings } = get();
+    set({ connectionStatus: "connecting" });
+    try {
+      await agentService.connect({
+        apiUrl: settings.connection.apiUrl,
+        websocketUrl: settings.connection.websocketUrl || undefined,
+        token: settings.connection.token || undefined,
+        transportType: settings.connection.transportType,
+      });
+      set({ connectionStatus: "connected" });
     } catch {
       set({ connectionStatus: "failed" });
     }
