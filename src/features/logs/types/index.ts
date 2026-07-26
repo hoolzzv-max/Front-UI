@@ -1,10 +1,9 @@
-import type { LogEntry, LogLevel } from "../../../types/log";
+export type LogLevel = "info" | "success" | "warning" | "error" | "debug";
 
-export type AppLogEntry = LogEntry;
-
-export type LogFilter = LogLevel | "all";
-
-export type CreateLogInput = {
+export interface LogEntry {
+  id: string;
   level: LogLevel;
   message: string;
-};
+  timestamp: string;
+  source?: string;
+}

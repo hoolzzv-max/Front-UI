@@ -1,66 +1,40 @@
 import { create } from "zustand";
-import type { LogEntry, LogLevel } from "../../../types/log";
-import type { CreateLogInput, LogFilter } from "../types";
+import type { LogEntry, LogLevel } from "../types";
 
 type LogsState = {
   logs: LogEntry[];
-  filter: LogFilter;
-
-  addLog: (input: CreateLogInput) => LogEntry;
-  setFilter: (filter: LogFilter) => void;
+  addLog: (input: { level: LogLevel; message: string; source?: string }) => LogEntry;
   clearLogs: () => void;
+  getCounts: () => { total: number; info: number; warning: number; error: number };
 };
 
 function createId() {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return crypto.randomUUID();
-  }
-
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-function now() {
-  return new Date().toISOString();
-}
+function now() { return new Date().toISOString(); }
 
-function createLog(level: LogLevel, message: string): LogEntry {
-  return {
-    id: createId(),
-    level,
-    message,
-    timestamp: now(),
-  };
-}
-
-export const useLogsStore = create<LogsState>((set) => ({
+export const useLogsStore = create<LogsState>((set, get) => ({
   logs: [
-    createLog("info", "Workspace shell mounted."),
-    createLog("success", "Providers initialized."),
-    createLog("info", "Chat, Editor, Explorer and Prompt features loaded."),
-    createLog("warning", "Backend integration is not connected yet."),
+    { id: createId(), level: "info", message: "Application started.", timestamp: now() },
   ],
 
-  filter: "all",
-
   addLog: (input) => {
-    const log = createLog(input.level, input.message);
-
-    set((state) => ({
-      logs: [...state.logs, log],
-    }));
-
-    return log;
+    const entry: LogEntry = { id: createId(), level: input.level, message: input.message, timestamp: now(), source: input.source };
+    set((state) => ({ logs: [...state.logs, entry] }));
+    return entry;
   },
 
-  setFilter: (filter) => {
-    set({
-      filter,
-    });
-  },
+  clearLogs: () => { set({ logs: [] }); },
 
-  clearLogs: () => {
-    set({
-      logs: [],
-    });
+  getCounts: () => {
+    const logs = get().logs;
+    return {
+      total: logs.length,
+      info: logs.filter((l) => l.level === "info").length,
+      warning: logs.filter((l) => l.level === "warning").length,
+      error: logs.filter((l) => l.level === "error").length,
+    };
   },
 }));
