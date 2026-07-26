@@ -1,5 +1,15 @@
 import { Send, Wand2 } from "lucide-react";
+
 import { usePrompt } from "../hooks/usePrompt";
+import type { PromptTarget } from "../types";
+
+const TARGETS: { value: PromptTarget; label: string }[] = [
+  { value: "chat", label: "Chat" },
+  { value: "editor", label: "Editor" },
+  { value: "git", label: "Git" },
+  { value: "task", label: "Task" },
+  { value: "agent", label: "Agent" },
+];
 
 export function PromptComposer() {
   const { value, target, setValue, setTarget, sendToAgent } = usePrompt();
@@ -10,14 +20,14 @@ export function PromptComposer() {
         <div className="flex items-center gap-2">
           <select
             value={target}
-            onChange={(event) => setTarget(event.target.value as "chat" | "editor" | "git" | "task" | "agent")}
+            onChange={(event) => setTarget(event.target.value as PromptTarget)}
             className="h-10 rounded-xl border border-neutral-800 bg-neutral-900 px-3 text-sm text-neutral-100 outline-none"
           >
-            <option value="chat">Chat</option>
-            <option value="editor">Editor</option>
-            <option value="git">Git</option>
-            <option value="task">Task</option>
-            <option value="agent">Agent</option>
+            {TARGETS.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
           </select>
 
           <div className="flex flex-1 items-center rounded-xl border border-neutral-800 bg-neutral-900">
@@ -26,12 +36,6 @@ export function PromptComposer() {
               value={value}
               placeholder="Enter instruction..."
               onChange={(event) => setValue(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" && !event.shiftKey) {
-                  event.preventDefault();
-                  void sendToAgent();
-                }
-              }}
               className="min-h-10 flex-1 resize-none bg-transparent px-3 py-2 text-sm text-neutral-100 outline-none placeholder:text-neutral-600"
             />
 
@@ -47,13 +51,14 @@ export function PromptComposer() {
           <button
             type="button"
             className="flex h-10 w-10 items-center justify-center rounded-xl border border-neutral-800 bg-neutral-900 text-neutral-400 transition hover:text-neutral-100"
+            title="Format prompt (coming soon)"
           >
             <Wand2 size={16} />
           </button>
         </div>
 
         <div className="px-1 text-[11px] text-neutral-600">
-          Enter to send · Shift+Enter for new line
+          Prompt System Ready
         </div>
       </div>
     </div>

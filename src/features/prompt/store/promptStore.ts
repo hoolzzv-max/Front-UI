@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { PromptRequest, PromptTarget } from "../types";
-import { agentService } from "../../../agents";
+import { agentService } from "@/agents";
 import { useChatStore } from "../../chat/store/chatStore";
 import { useLogsStore } from "../../logs/store/logsStore";
 import { useConsoleStore } from "../../console/store/consoleStore";
@@ -30,7 +30,9 @@ export const usePromptStore = create<PromptState>((set, get) => ({
   history: [],
 
   setValue: (value) => set({ value }),
+
   setTarget: (target) => set({ target }),
+
   clear: () => set({ value: "" }),
 
   submit: () => {
@@ -59,21 +61,20 @@ export const usePromptStore = create<PromptState>((set, get) => ({
     const consoleStore = useConsoleStore.getState();
 
     chatStore.addMessage({ role: "user", content: prompt, status: "completed" });
-    logsStore.addLog({ level: "info", message: "Prompt sent to agent." });
+    logsStore.addLog({ level: "info", message: "Prompt sent to agent" });
     consoleStore.appendEntry({ type: "input", content: prompt });
 
     set({ value: "" });
 
     try {
-      const response = await agentService.sendInstruction({ prompt });
+      const response = await agentService.sendPrompt({ prompt });
       const message = response.message ?? "No response received.";
 
       chatStore.addMessage({ role: "assistant", content: message, status: "completed" });
       consoleStore.appendEntry({ type: "output", content: message });
       logsStore.addLog({ level: "success", message: "Agent response received." });
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to reach agent.";
+      const message = error instanceof Error ? error.message : "Failed to reach agent.";
 
       chatStore.addMessage({ role: "assistant", content: message, status: "error" });
       consoleStore.appendEntry({ type: "error", content: message });
