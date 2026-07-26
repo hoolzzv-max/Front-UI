@@ -1,3 +1,4 @@
-export type { ITransport, TransportRequestOptions, TransportConfig } from "./types";
-export { HttpTransport } from "./HttpTransport";
-export { WebSocketTransport } from "./WebSocketTransport";
+export { httpTransport, HttpTransport } from "./HttpTransport";
+export { webSocketTransport, WebSocketTransport } from "./WebSocketTransport";
+export { sseTransport, SseTransport } from "./SseTransport";
+export type { Transport, RequestTransport, StreamTransport, TransportOptions, RequestTransportOptions } from "./types";

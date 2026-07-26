@@ -1,21 +1,18 @@
-export interface AiderStatusResponse {
-  status: "online" | "offline";
-
-  version?: string;
-
-  model?: string;
-}
-
-export interface AiderPromptRequest {
+export interface AgentPromptRequest {
   prompt: string;
-
   files?: string[];
+  context?: string;
+  taskId?: string;
 }
 
-export interface AiderPromptResponse {
+export interface AgentPromptResponse {
   success: boolean;
-
   message: string;
-
   taskId?: string;
+}
+
+export interface AgentStatusResponse {
+  status: "online" | "offline";
+  version?: string;
+  model?: string;
 }

@@ -1,54 +1,31 @@
-// ============================================================
-// WebSocketTransport — wraps the existing websocketService.
-// Only this file may interact with WebSocket for agent comms.
-// ============================================================
+import { websocketService } from "@/services/websocket";
+import type { StreamTransport, TransportOptions } from "./types";
 
-import type { ITransport, TransportRequestOptions } from "./types";
-import { websocketService } from "../../services/websocket";
+export class WebSocketTransport implements StreamTransport {
+  readonly type = "websocket" as const;
+  private connected = false;
+  private currentUrl: string | null = null;
+  private options: TransportOptions = {};
 
-export class WebSocketTransport implements ITransport {
-  private readonly handlers = new Set<(raw: string) => void>();
-  private unsubscribeFromService: (() => void) | null = null;
-
-  connect(url: string): void {
+  async connect(url: string, options?: TransportOptions): Promise<void> {
+    this.currentUrl = url;
+    this.options = options ?? {};
+    if (this.options.onStatus) { this.options.onStatus("connecting"); }
     websocketService.connect(url);
-
-    // Bridge raw WS messages to our handlers
-    this.unsubscribeFromService = websocketService.subscribe((message) => {
-      const raw = JSON.stringify(message.payload);
-      this.handlers.forEach((h) => h(raw));
-    });
+    this.connected = true;
+    if (this.options.onStatus) { this.options.onStatus("connected"); }
   }
 
-  disconnect(): void {
-    this.unsubscribeFromService?.();
-    this.unsubscribeFromService = null;
+  async disconnect(): Promise<void> {
     websocketService.disconnect();
+    this.connected = false;
+    this.currentUrl = null;
+    if (this.options.onStatus) { this.options.onStatus("disconnected"); }
   }
 
-  isConnected(): boolean {
-    return websocketService.isConnected();
-  }
-
-  subscribe(handler: (raw: string) => void): () => void {
-    this.handlers.add(handler);
-    return () => this.handlers.delete(handler);
-  }
-
-  /** WebSocket transport sends via WS envelope; no REST semantics */
-  async request<T>(_endpoint: string, options?: TransportRequestOptions): Promise<T> {
-    const sent = websocketService.send({
-      type: _endpoint,
-      payload: options?.body,
-      timestamp: new Date().toISOString(),
-    });
-
-    if (!sent) {
-      throw new Error("WebSocketTransport: not connected — message queued.");
-    }
-
-    // For a proper request/response pattern over WS a promise + timeout
-    // would be needed; for now this is fire-and-forget.
-    return null as T;
-  }
+  isConnected(): boolean { return this.connected && websocketService.isConnected(); }
+  send(data: unknown): boolean { return websocketService.send(data); }
+  getUrl(): string | null { return this.currentUrl; }
 }
+
+export const webSocketTransport = new WebSocketTransport();
