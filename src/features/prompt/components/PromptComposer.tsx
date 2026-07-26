@@ -1,18 +1,8 @@
-import {
-  Send,
-  Wand2,
-} from "lucide-react";
-
+import { Send, Wand2 } from "lucide-react";
 import { usePrompt } from "../hooks/usePrompt";
 
 export function PromptComposer() {
-  const {
-    value,
-    target,
-    setValue,
-    setTarget,
-    sendToAider,
-  } = usePrompt();
+  const { value, target, setValue, setTarget, sendToAgent } = usePrompt();
 
   return (
     <div className="border-t border-neutral-800 bg-neutral-950 p-3">
@@ -20,32 +10,14 @@ export function PromptComposer() {
         <div className="flex items-center gap-2">
           <select
             value={target}
-            onChange={(event) =>
-              setTarget(
-                event.target.value as any,
-              )
-            }
+            onChange={(event) => setTarget(event.target.value as "chat" | "editor" | "git" | "task" | "agent")}
             className="h-10 rounded-xl border border-neutral-800 bg-neutral-900 px-3 text-sm text-neutral-100 outline-none"
           >
-            <option value="chat">
-              Chat
-            </option>
-
-            <option value="editor">
-              Editor
-            </option>
-
-            <option value="git">
-              Git
-            </option>
-
-            <option value="task">
-              Task
-            </option>
-
-            <option value="agent">
-              Agent
-            </option>
+            <option value="chat">Chat</option>
+            <option value="editor">Editor</option>
+            <option value="git">Git</option>
+            <option value="task">Task</option>
+            <option value="agent">Agent</option>
           </select>
 
           <div className="flex flex-1 items-center rounded-xl border border-neutral-800 bg-neutral-900">
@@ -53,19 +25,19 @@ export function PromptComposer() {
               rows={1}
               value={value}
               placeholder="Enter instruction..."
-              onChange={(event) =>
-                setValue(
-                  event.target.value,
-                )
-              }
+              onChange={(event) => setValue(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                  event.preventDefault();
+                  void sendToAgent();
+                }
+              }}
               className="min-h-10 flex-1 resize-none bg-transparent px-3 py-2 text-sm text-neutral-100 outline-none placeholder:text-neutral-600"
             />
 
             <button
               type="button"
-              onClick={() => {
-                void sendToAider();
-              }}
+              onClick={() => void sendToAgent()}
               className="m-1 flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white transition hover:bg-blue-500"
             >
               <Send size={15} />
@@ -81,7 +53,7 @@ export function PromptComposer() {
         </div>
 
         <div className="px-1 text-[11px] text-neutral-600">
-          Prompt System Ready
+          Enter to send · Shift+Enter for new line
         </div>
       </div>
     </div>

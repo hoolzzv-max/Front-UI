@@ -1,34 +1,24 @@
-import { useGitStore } from "../features/git/store/gitStore";
+// Git service — delegates git operations to the feature store.
+// When the active agent adapter supports git, it will be routed here.
+import { FEATURE_FLAGS } from "../config/features";
 
-export class GitService {
-  getCurrentBranch() {
-    return useGitStore.getState()
-      .currentBranch;
+export interface GitServiceResult {
+  success: boolean;
+  message?: string;
+}
+
+class GitService {
+  isSupported(): boolean {
+    return FEATURE_FLAGS.git;
   }
 
-  stageAll() {
-    useGitStore
-      .getState()
-      .stageAll();
-  }
-
-  unstageAll() {
-    useGitStore
-      .getState()
-      .unstageAll();
-  }
-
-  commit(message: string) {
-    const store =
-      useGitStore.getState();
-
-    store.setCommitMessage(
-      message,
-    );
-
-    store.commit();
+  async getStatus(): Promise<GitServiceResult> {
+    if (!this.isSupported()) {
+      return { success: false, message: "Git feature is not enabled." };
+    }
+    // TODO: Route through agent adapter when agentFileSystem is enabled
+    return { success: true };
   }
 }
 
-export const gitService =
-  new GitService();
+export const gitService = new GitService();

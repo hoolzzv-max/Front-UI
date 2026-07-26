@@ -1,4 +1,4 @@
-export * from "./aider";
+export * from "./agent";
 export * from "./chat";
 export * from "./git";
 export * from "./settings";

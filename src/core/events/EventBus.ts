@@ -15,13 +15,9 @@ export class EventBus<Events extends EventMap = EventMap> {
     handler: EventHandler<Events[EventName]>,
   ): EventSubscription {
     const handlers = this.listeners.get(eventName) ?? new Set();
-
     handlers.add(handler as EventHandler<Events[keyof Events]>);
     this.listeners.set(eventName, handlers);
-
-    return () => {
-      this.off(eventName, handler);
-    };
+    return () => this.off(eventName, handler);
   }
 
   once<EventName extends keyof Events>(
@@ -32,7 +28,6 @@ export class EventBus<Events extends EventMap = EventMap> {
       unsubscribe();
       await handler(payload);
     });
-
     return unsubscribe;
   }
 
@@ -41,14 +36,9 @@ export class EventBus<Events extends EventMap = EventMap> {
     handler: EventHandler<Events[EventName]>,
   ) {
     const handlers = this.listeners.get(eventName);
-
     if (!handlers) return;
-
     handlers.delete(handler as EventHandler<Events[keyof Events]>);
-
-    if (handlers.size === 0) {
-      this.listeners.delete(eventName);
-    }
+    if (handlers.size === 0) this.listeners.delete(eventName);
   }
 
   async emit<EventName extends keyof Events>(
@@ -56,11 +46,9 @@ export class EventBus<Events extends EventMap = EventMap> {
     payload: Events[EventName],
   ) {
     const handlers = this.listeners.get(eventName);
-
     if (!handlers || handlers.size === 0) return;
 
     const errors: AppError[] = [];
-
     for (const handler of handlers) {
       try {
         await handler(payload as Events[keyof Events]);
@@ -69,10 +57,7 @@ export class EventBus<Events extends EventMap = EventMap> {
           new AppError(`Event handler failed for "${String(eventName)}".`, {
             code: ERROR_CODES.EVENT_HANDLER_ERROR,
             cause: error,
-            details: {
-              eventName,
-              payload,
-            },
+            details: { eventName, payload },
           }),
         );
       }
@@ -81,7 +66,7 @@ export class EventBus<Events extends EventMap = EventMap> {
     if (errors.length > 0) {
       throw new AppError(`One or more handlers failed for "${String(eventName)}".`, {
         code: ERROR_CODES.EVENT_HANDLER_ERROR,
-        details: errors.map((error) => error.toJSON()),
+        details: errors.map((e) => e.toJSON()),
       });
     }
   }
@@ -91,7 +76,6 @@ export class EventBus<Events extends EventMap = EventMap> {
       this.listeners.delete(eventName);
       return;
     }
-
     this.listeners.clear();
   }
 
@@ -101,71 +85,33 @@ export class EventBus<Events extends EventMap = EventMap> {
 }
 
 export type WorkspaceEventMap = {
-  "app:ready": {
-    timestamp: string;
-  };
+  "app:ready": { timestamp: string };
 
-  "api:error": {
-    message: string;
-    status?: number;
-    code?: string;
-  };
+  "api:error": { message: string; status?: number; code?: string };
 
-  "console:output": {
-    content: string;
-    commandId?: string;
-  };
+  "console:output": { content: string; commandId?: string };
+  "console:error": { content: string; commandId?: string };
 
-  "console:error": {
-    content: string;
-    commandId?: string;
-  };
+  "task:created": { taskId: string; title: string };
+  "task:updated": { taskId: string; status?: string; progress?: number };
 
-  "task:created": {
-    taskId: string;
-    title: string;
-  };
+  // Generic agent events — no specific agent name
+  "agent:message": { taskId?: string; content: string };
+  "agent:files-changed": { files: string[] };
+  "agent:status-changed": { status: "unknown" | "online" | "offline"; version?: string };
+  "agent:error": { message: string; code?: string; recoverable?: boolean };
+  "agent:log": { level: "info" | "warn" | "error" | "debug"; message: string; taskId?: string };
+  "agent:task-updated": { taskId: string; status: string; progress?: number };
 
-  "task:updated": {
-    taskId: string;
-    status?: string;
-    progress?: number;
-  };
-
-  "aider:message": {
-    taskId?: string;
-    content: string;
-  };
-
-  "aider:files-changed": {
-    files: string[];
-  };
-
-  "git:changed": {
-    branch: string;
-    files: string[];
-  };
+  "git:changed": { branch: string; files: string[] };
 
   "websocket:status": {
     status: "idle" | "connecting" | "connected" | "reconnecting" | "disconnected" | "error";
     url?: string;
   };
-
-  "websocket:message": {
-    type?: string;
-    payload: unknown;
-    raw: string;
-  };
-
-  "websocket:error": {
-    message: string;
-  };
-
-  "websocket:closed": {
-    code: number;
-    reason: string;
-    wasClean: boolean;
-  };
+  "websocket:message": { type?: string; payload: unknown; raw: string };
+  "websocket:error": { message: string };
+  "websocket:closed": { code: number; reason: string; wasClean: boolean };
 };
 
 export const eventBus = new EventBus<WorkspaceEventMap>();

@@ -372,7 +372,6 @@ export function AppShell() {
         <PromptComposer />
 
         <StatusBar
-          status="Ready"
           model="Not connected"
           workspace="local"
           branch="main"

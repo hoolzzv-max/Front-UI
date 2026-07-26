@@ -1,1 +1,1 @@
-export * from "./AiderRuntime";
+export { AgentRuntime, agentRuntime } from "./AgentRuntime";

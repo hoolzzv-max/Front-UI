@@ -1,12 +1,14 @@
-export type ThemeMode =
-  | "dark"
-  | "light"
-  | "system";
+export type ThemeMode = "dark" | "light" | "system";
 
 export interface ConnectionSettings {
-  apiUrl: string;
+  /** Base HTTP URL of the agent backend */
+  agentUrl: string;
+  /** WebSocket URL for streaming (optional) */
   websocketUrl: string;
-  aiderUrl: string;
+  /** Bearer auth token (optional) */
+  token: string;
+  /** Transport preference */
+  transport: "http" | "websocket" | "sse";
 }
 
 export interface EditorSettings {

@@ -1,23 +1,18 @@
 import { create } from "zustand";
-
-import type {
-  ApplicationSettings,
-} from "../types";
-
+import type { ApplicationSettings } from "../types";
 import { localStorageDriver } from "../../../core/storage/LocalStorage";
-import { aiderService } from "../../../services/aider";
+import { agentService } from "../../../agents";
 
 const STORAGE_KEY = "app-settings";
 
 const DEFAULT_SETTINGS: ApplicationSettings = {
   theme: "dark",
-
   connection: {
-    apiUrl: "",
-    websocketUrl: "",
-    aiderUrl: "",
+    agentUrl: import.meta.env.VITE_AGENT_API_URL ?? "",
+    websocketUrl: import.meta.env.VITE_AGENT_WS_URL ?? "",
+    token: import.meta.env.VITE_AGENT_API_TOKEN ?? "",
+    transport: "http",
   },
-
   editor: {
     fontSize: 14,
     wordWrap: true,
@@ -28,129 +23,72 @@ const DEFAULT_SETTINGS: ApplicationSettings = {
 
 type SettingsState = {
   settings: ApplicationSettings;
-  connectionStatus:
-    | "idle"
-    | "connecting"
-    | "connected"
-    | "failed";
+  connectionStatus: "idle" | "connecting" | "connected" | "failed";
 
-  updateSettings: (
-    patch: Partial<ApplicationSettings>,
-  ) => void;
-
-  updateConnection: (
-    patch: Partial<ApplicationSettings["connection"]>,
-  ) => void;
-
-  updateEditor: (
-    patch: Partial<ApplicationSettings["editor"]>,
-  ) => void;
-
+  updateSettings: (patch: Partial<ApplicationSettings>) => void;
+  updateConnection: (patch: Partial<ApplicationSettings["connection"]>) => void;
+  updateEditor: (patch: Partial<ApplicationSettings["editor"]>) => void;
   testConnection: () => Promise<void>;
-
+  applyConnectionToAgent: () => void;
   reset: () => void;
 };
 
-export const useSettingsStore =
-  create<SettingsState>((set) => ({
-    settings:
-      localStorageDriver.get(
-        STORAGE_KEY,
-        DEFAULT_SETTINGS,
-      ),
+export const useSettingsStore = create<SettingsState>((set, get) => ({
+  settings: localStorageDriver.get(STORAGE_KEY, DEFAULT_SETTINGS),
+  connectionStatus: "idle",
 
-    connectionStatus: "idle",
+  updateSettings: (patch) => {
+    set((state) => {
+      const nextSettings = { ...state.settings, ...patch };
+      localStorageDriver.set(STORAGE_KEY, nextSettings);
+      return { settings: nextSettings };
+    });
+  },
 
-    updateSettings: (patch) => {
-      set((state) => {
-        const nextSettings = {
-          ...state.settings,
-          ...patch,
-        };
+  updateConnection: (patch) => {
+    set((state) => {
+      const nextSettings = {
+        ...state.settings,
+        connection: { ...state.settings.connection, ...patch },
+      };
+      localStorageDriver.set(STORAGE_KEY, nextSettings);
+      return { settings: nextSettings };
+    });
+  },
 
-        localStorageDriver.set(
-          STORAGE_KEY,
-          nextSettings,
-        );
+  updateEditor: (patch) => {
+    set((state) => {
+      const nextSettings = {
+        ...state.settings,
+        editor: { ...state.settings.editor, ...patch },
+      };
+      localStorageDriver.set(STORAGE_KEY, nextSettings);
+      return { settings: nextSettings };
+    });
+  },
 
-        return {
-          settings: nextSettings,
-        };
-      });
-    },
+  applyConnectionToAgent: () => {
+    const { connection } = get().settings;
+    agentService.configure({
+      apiUrl: connection.agentUrl,
+      websocketUrl: connection.websocketUrl || undefined,
+      token: connection.token || undefined,
+    });
+  },
 
-    updateConnection: (patch) => {
-      set((state) => {
-        const nextSettings = {
-          ...state.settings,
+  testConnection: async () => {
+    get().applyConnectionToAgent();
+    set({ connectionStatus: "connecting" });
+    try {
+      const online = await agentService.testConnection();
+      set({ connectionStatus: online ? "connected" : "failed" });
+    } catch {
+      set({ connectionStatus: "failed" });
+    }
+  },
 
-          connection: {
-            ...state.settings.connection,
-            ...patch,
-          },
-        };
-
-        localStorageDriver.set(
-          STORAGE_KEY,
-          nextSettings,
-        );
-
-        return {
-          settings: nextSettings,
-        };
-      });
-    },
-
-    updateEditor: (patch) => {
-      set((state) => {
-        const nextSettings = {
-          ...state.settings,
-
-          editor: {
-            ...state.settings.editor,
-            ...patch,
-          },
-        };
-
-        localStorageDriver.set(
-          STORAGE_KEY,
-          nextSettings,
-        );
-
-        return {
-          settings: nextSettings,
-        };
-      });
-    },
-
-    testConnection: async () => {
-      set({
-        connectionStatus:
-          "connecting",
-      });
-
-      try {
-        const result =
-          await aiderService.getStatus();
-
-        set({
-          connectionStatus:
-            result.status === "online"
-              ? "connected"
-              : "failed",
-        });
-      } catch {
-        set({
-          connectionStatus:
-            "failed",
-        });
-      }
-    },
-
-    reset: () => {
-      set({
-        settings: DEFAULT_SETTINGS,
-        connectionStatus: "idle",
-      });
-    },
-  }));
+  reset: () => {
+    localStorageDriver.set(STORAGE_KEY, DEFAULT_SETTINGS);
+    set({ settings: DEFAULT_SETTINGS, connectionStatus: "idle" });
+  },
+}));

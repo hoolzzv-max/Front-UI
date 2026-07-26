@@ -1,6 +1,5 @@
-export * from "./api";
-export * from "./aider";
-export * from "./git";
-export * from "./settings";
-export * from "./websocket";
-export * from "./workspace";
+// Service singletons re-exported for convenience.
+// Features should use agentService from "../../agents" for agent communication.
+export { apiService } from "./api";
+export { websocketService } from "./websocket";
+export { workspaceService } from "./workspace";
