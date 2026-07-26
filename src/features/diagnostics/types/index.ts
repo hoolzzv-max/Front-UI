@@ -1,11 +1,5 @@
 export type DiagnosticSeverity = "info" | "warning" | "error";
-
-export type DiagnosticSource =
-  | "typescript"
-  | "runtime"
-  | "backend"
-  | "aider"
-  | "workspace";
+export type DiagnosticSource = "typescript" | "runtime" | "backend" | "agent" | "workspace";
 
 export interface Diagnostic {
   id: string;

@@ -1,5 +1,3 @@
 import { useConsoleStore } from "../store/consoleStore";
 
-export function useConsole() {
-  return useConsoleStore();
-}
+export function useConsole() { return useConsoleStore(); }

@@ -1,12 +1,5 @@
 export type ConsoleEntryType = "input" | "output" | "error" | "system";
-
-export type ConsoleCommandStatus =
-  | "idle"
-  | "queued"
-  | "running"
-  | "completed"
-  | "failed"
-  | "cancelled";
+export type ConsoleCommandStatus = "idle" | "queued" | "running" | "completed" | "failed" | "cancelled";
 
 export interface ConsoleEntry {
   id: string;
