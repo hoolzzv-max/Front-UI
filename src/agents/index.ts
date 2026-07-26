@@ -1,19 +1,33 @@
-// ============================================================
-// Public surface of the agents layer.
-// Features import from here — never from sub-paths.
-// ============================================================
-
-export { agentService } from "./core/service";
-export { agentRegistry } from "./core/registry";
-export type { IAgentAdapter } from "./core/adapter";
+// Agent abstraction layer — public API
 export type {
-  AgentStatus,
-  AgentInstruction,
-  AgentResponse,
-  AgentCancelResult,
-  AgentCapabilities,
-  AgentConnectionConfig,
-  AgentConnectionStatus,
-  AgentTransportType,
-} from "./core/types";
-export type { AgentEventMap } from "./core/events";
+  AgentConnectionConfig, AgentConnectionStatus, AgentCapabilities, AgentStatus,
+  AgentPromptRequest, AgentPromptResponse, AgentTask, AgentTaskStatus,
+  AgentFile, AgentFileDiff, AgentLogEntry, AgentLogLevel, AgentDiagnostic,
+  AgentGitStatus, AgentTransportType, DEFAULT_CAPABILITIES,
+} from "./core/AgentTypes";
+
+export type { AgentEventMap } from "./core/AgentEvents";
+export type { AgentAdapter } from "./core/AgentAdapter";
+export type { AgentEventEmitter } from "./core/AgentService/types";
+
+export { agentService, AgentService } from "./core/AgentService";
+export { agentRegistry, AgentRegistry } from "./core/AgentRegistry";
+
+export {
+  httpTransport, HttpTransport, webSocketTransport, WebSocketTransport,
+  sseTransport, SseTransport,
+} from "./transport";
+export type {
+  Transport, RequestTransport, StreamTransport, TransportOptions, RequestTransportOptions,
+} from "./transport";
+
+export {
+  normalizeStatus, normalizePromptRequest, normalizePromptResponse,
+  normalizeFile, normalizeFileList, normalizeFileDiff, normalizeTaskStatus,
+  normalizeTask, normalizeTaskList, normalizeLogLevel, normalizeLogEntry,
+  normalizeDiagnostic, normalizeGitStatus,
+} from "./protocol";
+
+export {
+  currentAgentAdapter, mockAgentAdapter, TemplateAgentAdapter,
+} from "./adapters";

@@ -1,58 +1,45 @@
-// ============================================================
-// TemplateAgentAdapter — copy this to add a new agent backend.
-//
-// Steps:
-//   1. cp -r src/agents/adapters/template src/agents/adapters/my-agent
-//   2. Set `id` to a unique string
-//   3. Implement each method against your backend's API
-//   4. Register in src/bootstrap/registerAgents.ts
-//   5. No feature files need to change — only this adapter.
-// ============================================================
-
-import type { IAgentAdapter } from "../../core/adapter";
+import type { AgentAdapter } from "../../core/AgentAdapter";
 import type {
-  AgentStatus,
-  AgentInstruction,
-  AgentResponse,
-  AgentCancelResult,
-  AgentCapabilities,
   AgentConnectionConfig,
-} from "../../core/types";
+  AgentCapabilities,
+  AgentStatus,
+  AgentPromptRequest,
+  AgentPromptResponse,
+} from "../../core/AgentTypes";
+import type { AgentEventEmitter } from "../../core/AgentService/types";
 
-export class TemplateAgentAdapter implements IAgentAdapter {
+export class TemplateAgentAdapter implements AgentAdapter {
   readonly id = "template";
+  readonly displayName = "Template Agent";
+  readonly capabilities: AgentCapabilities = {
+    chat: false,
+    fileManagement: false,
+    tasks: false,
+    git: false,
+    liveStreaming: false,
+    diagnostics: false,
+    cancelTasks: false,
+    fileDiff: false,
+  };
 
-  configure(_config: AgentConnectionConfig): void {
-    // TODO: store config and apply to transport
+  async connect(_config: AgentConnectionConfig): Promise<void> {
+    throw new Error("Template adapter not implemented.");
   }
 
-  async getStatus(): Promise<AgentStatus> {
-    // TODO: call your backend's health endpoint
-    return { status: "offline" };
+  async disconnect(): Promise<void> {}
+
+  async testConnection(_config: AgentConnectionConfig): Promise<AgentStatus> {
+    return { status: "unknown" };
   }
 
-  async sendInstruction(_instruction: AgentInstruction): Promise<AgentResponse> {
-    // TODO: call your backend's instruction/job endpoint
-    throw new Error("TemplateAgentAdapter.sendInstruction not implemented.");
+  getStatus(): AgentStatus {
+    return { status: "unknown" };
   }
 
-  async cancelTask(taskId: string): Promise<AgentCancelResult> {
-    // TODO: call your backend's cancel endpoint
-    throw new Error("TemplateAgentAdapter.cancelTask not implemented.");
-  }
-
-  async getTaskLogs(_taskId: string): Promise<string> {
-    // TODO: call your backend's logs endpoint
-    return "";
-  }
-
-  getCapabilities(): AgentCapabilities {
-    return {
-      streaming: false,
-      fileSystem: false,
-      git: false,
-      tasks: false,
-      diagnostics: false,
-    };
+  async sendPrompt(
+    _payload: AgentPromptRequest,
+    _emit: AgentEventEmitter,
+  ): Promise<AgentPromptResponse> {
+    throw new Error("Template adapter not implemented.");
   }
 }

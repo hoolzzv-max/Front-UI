@@ -1,100 +1,131 @@
-// ============================================================
-// CurrentAgentAdapter — wraps the configured HTTP backend.
-// This is the ONLY file that knows about the backend's API shape.
-// ============================================================
-
-import type { IAgentAdapter } from "../../core/adapter";
+import { httpTransport } from "../../transport";
+import {
+  normalizeStatus,
+  normalizePromptResponse,
+} from "../../protocol";
+import type { AgentAdapter } from "../../core/AgentAdapter";
+import type { AgentEventEmitter } from "../../core/AgentService/types";
 import type {
-  AgentStatus,
-  AgentInstruction,
-  AgentResponse,
-  AgentCancelResult,
-  AgentCapabilities,
   AgentConnectionConfig,
-} from "../../core/types";
-import { HttpTransport } from "../../transport/HttpTransport";
+  AgentCapabilities,
+  AgentStatus,
+  AgentPromptRequest,
+  AgentPromptResponse,
+} from "../../core/AgentTypes";
 
-export class CurrentAgentAdapter implements IAgentAdapter {
+export class CurrentAgentAdapter implements AgentAdapter {
   readonly id = "current";
-  private transport: HttpTransport;
-  private repoId: string | null = null;
+  readonly displayName = "Agent";
+  readonly capabilities: AgentCapabilities = {
+    chat: true,
+    fileManagement: false,
+    tasks: true,
+    git: false,
+    liveStreaming: false,
+    diagnostics: false,
+    cancelTasks: true,
+    fileDiff: false,
+  };
 
-  constructor() {
-    this.transport = new HttpTransport({
-      baseUrl: import.meta.env.VITE_AGENT_API_URL ?? "",
-      token: import.meta.env.VITE_AGENT_API_TOKEN ?? undefined,
-    });
+  private config: AgentConnectionConfig | null = null;
+  private currentRepoId: string | null = null;
+  private status: AgentStatus = { status: "disconnected" };
+
+  async connect(config: AgentConnectionConfig): Promise<void> {
+    this.config = config;
+    await httpTransport.connect(config.apiUrl);
+    if (config.token) {
+      httpTransport.setToken(config.token);
+    }
+    this.status = { status: "connected" };
   }
 
-  configure(config: AgentConnectionConfig): void {
-    this.transport.configure({
-      baseUrl: config.apiUrl,
-      token: config.token,
-    });
-    // Reset repo context when config changes
-    this.repoId = null;
+  async disconnect(): Promise<void> {
+    await httpTransport.disconnect();
+    this.currentRepoId = null;
+    this.status = { status: "disconnected" };
   }
 
-  async getStatus(): Promise<AgentStatus> {
+  async testConnection(config: AgentConnectionConfig): Promise<AgentStatus> {
     try {
-      const health = await this.transport.request<{ status: string }>("/health");
-      const version = await this.transport.request<{ version?: string }>("/version").catch(() => ({})) as { version?: string };
+      await httpTransport.connect(config.apiUrl);
+      if (config.token) {
+        httpTransport.setToken(config.token);
+      }
+
+      const health = await httpTransport.request<{ status: string }>("GET", "/health");
+      let version: string | undefined;
+
+      try {
+        const versionResp = await httpTransport.request<{ version?: string; aider_version?: string }>(
+          "GET",
+          "/version",
+        );
+        version = versionResp.version ?? versionResp.aider_version;
+      } catch {
+        // version endpoint is optional
+      }
+
+      const status = normalizeStatus(health);
       return {
-        status: health?.status === "ok" ? "online" : "offline",
-        version: version?.version,
+        ...status,
+        version,
+        status: health.status === "ok" ? "connected" : "error",
       };
     } catch {
-      return { status: "offline" };
+      return { status: "error" };
     }
   }
 
-  async sendInstruction(instruction: AgentInstruction): Promise<AgentResponse> {
-    // Ensure a repository context exists
-    if (!this.repoId) {
-      const repo = await this.transport.request<{ id: string }>("/repositories", {
-        method: "POST",
-        body: {
-          url: instruction.context ?? "https://github.com/user/repo",
-          branch: "main",
-        },
-      });
-      this.repoId = repo.id;
+  getStatus(): AgentStatus {
+    return this.status;
+  }
+
+  async sendPrompt(
+    payload: AgentPromptRequest,
+    emit: AgentEventEmitter,
+  ): Promise<AgentPromptResponse> {
+    if (!this.config) {
+      throw new Error("Adapter not connected.");
     }
 
-    const job = await this.transport.request<{ id: string }>("/jobs", {
-      method: "POST",
-      body: {
-        repository_id: this.repoId,
-        message: instruction.prompt,
-      },
+    if (!this.currentRepoId) {
+      const repo = await httpTransport.request<{ id: string }>(
+        "POST",
+        "/repositories",
+        {
+          url: payload.context ?? "https://github.com/user/repo",
+          branch: "main",
+        },
+      );
+      this.currentRepoId = repo.id;
+    }
+
+    const job = await httpTransport.request<{ id: string }>("POST", "/jobs", {
+      repository_id: this.currentRepoId,
+      message: payload.prompt,
     });
 
-    return {
+    emit("agent:task-created", { taskId: job.id, title: payload.prompt.slice(0, 60) });
+
+    return normalizePromptResponse({
       success: true,
       message: `Job started: ${job.id}`,
       taskId: job.id,
-    };
-  }
-
-  async cancelTask(taskId: string): Promise<AgentCancelResult> {
-    const res = await this.transport.request<{ job_id: string }>(`/jobs/${taskId}/cancel`, {
-      method: "POST",
     });
-    return { success: true, taskId: res.job_id };
   }
 
-  async getTaskLogs(taskId: string): Promise<string> {
-    const res = await this.transport.request<{ logs: string }>(`/jobs/${taskId}/logs`);
-    return res.logs ?? "";
-  }
-
-  getCapabilities(): AgentCapabilities {
-    return {
-      streaming: false,
-      fileSystem: false,
-      git: false,
-      tasks: true,
-      diagnostics: false,
-    };
+  async cancelTask(taskId: string): Promise<boolean> {
+    try {
+      await httpTransport.request<{ message: string; job_id: string }>(
+        "POST",
+        `/jobs/${taskId}/cancel`,
+      );
+      return true;
+    } catch {
+      return false;
+    }
   }
 }
+
+export const currentAgentAdapter = new CurrentAgentAdapter();

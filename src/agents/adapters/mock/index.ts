@@ -1,59 +1,70 @@
-// ============================================================
-// MockAgentAdapter — used during development and testing.
-// Never deployed as the active adapter in production.
-// ============================================================
-
-import type { IAgentAdapter } from "../../core/adapter";
+import type { AgentAdapter } from "../../core/AgentAdapter";
+import type { AgentEventEmitter } from "../../core/AgentService/types";
 import type {
-  AgentStatus,
-  AgentInstruction,
-  AgentResponse,
-  AgentCancelResult,
-  AgentCapabilities,
   AgentConnectionConfig,
-} from "../../core/types";
+  AgentCapabilities,
+  AgentStatus,
+  AgentPromptRequest,
+  AgentPromptResponse,
+} from "../../core/AgentTypes";
 
-export class MockAgentAdapter implements IAgentAdapter {
+export class MockAgentAdapter implements AgentAdapter {
   readonly id = "mock";
-  private config: AgentConnectionConfig = { apiUrl: "" };
+  readonly displayName = "Mock Agent (Dev)";
+  readonly capabilities: AgentCapabilities = {
+    chat: true,
+    fileManagement: true,
+    tasks: true,
+    git: true,
+    liveStreaming: false,
+    diagnostics: true,
+    cancelTasks: true,
+    fileDiff: true,
+  };
 
-  configure(config: AgentConnectionConfig): void {
-    this.config = config;
+  private connected = false;
+  private status: AgentStatus = { status: "disconnected" };
+
+  async connect(_config: AgentConnectionConfig): Promise<void> {
+    this.connected = true;
+    this.status = { status: "connected", version: "mock-1.0", model: "mock-model" };
   }
 
-  async getStatus(): Promise<AgentStatus> {
-    return {
-      status: "online",
-      version: "mock-1.0.0",
-      model: "mock-model",
-      workspace: "/mock/workspace",
-    };
+  async disconnect(): Promise<void> {
+    this.connected = false;
+    this.status = { status: "disconnected" };
   }
 
-  async sendInstruction(instruction: AgentInstruction): Promise<AgentResponse> {
-    await new Promise((r) => setTimeout(r, 300));
+  async testConnection(_config: AgentConnectionConfig): Promise<AgentStatus> {
+    return { status: "connected", version: "mock-1.0", model: "mock-model" };
+  }
+
+  getStatus(): AgentStatus {
+    return this.status;
+  }
+
+  async sendPrompt(
+    payload: AgentPromptRequest,
+    emit: AgentEventEmitter,
+  ): Promise<AgentPromptResponse> {
+    const taskId = `mock-${Date.now()}`;
+    emit("agent:task-created", { taskId, title: payload.prompt.slice(0, 60) });
+    emit("agent:message", {
+      taskId,
+      content: `[Mock] Processing: ${payload.prompt}`,
+      role: "assistant",
+    });
+
     return {
       success: true,
-      message: `[Mock] Received: "${instruction.prompt.slice(0, 80)}"`,
-      taskId: `mock-${Date.now()}`,
+      message: `Mock job started: ${taskId}`,
+      taskId,
     };
   }
 
-  async cancelTask(taskId: string): Promise<AgentCancelResult> {
-    return { success: true, taskId };
-  }
-
-  async getTaskLogs(_taskId: string): Promise<string> {
-    return "[Mock] No logs available.";
-  }
-
-  getCapabilities(): AgentCapabilities {
-    return {
-      streaming: false,
-      fileSystem: false,
-      git: false,
-      tasks: true,
-      diagnostics: false,
-    };
+  async cancelTask(_taskId: string): Promise<boolean> {
+    return true;
   }
 }
+
+export const mockAgentAdapter = new MockAgentAdapter();
