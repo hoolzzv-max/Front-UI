@@ -7,7 +7,9 @@ import {
   PanelRight,
   Settings,
   Sparkles,
+  Sun,
 } from "lucide-react";
+import { useTheme } from "@/providers/ThemeProvider";
 
 type HeaderProps = {
   workspaceName: string;
@@ -17,6 +19,7 @@ type HeaderProps = {
   onToggleNotifications: () => void;
   onToggleRightPanel: () => void;
   onToggleBottomDrawer: () => void;
+  onOpenSettings: () => void;
 };
 
 export function Header({
@@ -27,7 +30,10 @@ export function Header({
   onToggleNotifications,
   onToggleRightPanel,
   onToggleBottomDrawer,
+  onOpenSettings,
 }: HeaderProps) {
+  const { theme, toggleTheme } = useTheme();
+
   return (
     <header className="flex h-12 shrink-0 items-center justify-between border-b border-neutral-800 bg-neutral-950 px-3">
       <div className="flex min-w-0 items-center gap-3">
@@ -91,14 +97,16 @@ export function Header({
         </button>
 
         <button
+          onClick={toggleTheme}
           className="rounded-xl p-2 text-neutral-400 transition hover:bg-neutral-800 hover:text-neutral-100"
-          title="Theme"
+          title="Toggle theme"
           type="button"
         >
-          <Moon size={18} />
+          {theme === "dark" ? <Moon size={18} /> : <Sun size={18} />}
         </button>
 
         <button
+          onClick={onOpenSettings}
           className="rounded-xl p-2 text-neutral-400 transition hover:bg-neutral-800 hover:text-neutral-100"
           title="Settings"
           type="button"

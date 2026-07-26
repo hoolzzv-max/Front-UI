@@ -16,6 +16,7 @@ import { ChatPanel } from "../features/chat/components/ChatPanel";
 import { EditorPanel } from "../features/editor/components/EditorPanel";
 import { FileExplorer } from "../features/explorer/components/FileExplorer";
 import { PromptComposer } from "../features/prompt/components/PromptComposer";
+import { SettingsPanel } from "../features/settings/components/SettingsPanel";
 import { ActivityPanel, type WorkspaceView } from "./ActivityPanel";
 
 const KEYBOARD_EVENTS = {
@@ -61,7 +62,7 @@ function WorkspacePlaceholder({ view }: { view: WorkspaceView }) {
     diff: {
       title: "Diff Workspace",
       description:
-        "هنا سيتم عرض الفروقات بين الملفات قبل وبعد تنفيذ أوامر Aider أو أي Agent آخر.",
+        "File differences will appear here after the agent makes changes.",
       badge: "Review",
     },
   } satisfies Record<WorkspaceView, {
@@ -108,6 +109,7 @@ export function AppShell() {
 
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
   const [isBottomDrawerOpen, setIsBottomDrawerOpen] = useState(true);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const [notifications, setNotifications] = useState<AppNotification[]>([
     {
@@ -317,6 +319,7 @@ export function AppShell() {
           }}
           onToggleRightPanel={toggleRightPanel}
           onToggleBottomDrawer={toggleBottomDrawer}
+          onOpenSettings={() => setIsSettingsOpen(true)}
         />
 
         <div className="flex min-h-0 flex-1">
@@ -371,13 +374,7 @@ export function AppShell() {
 
         <PromptComposer />
 
-        <StatusBar
-          model="Not connected"
-          workspace="local"
-          branch="main"
-          encoding="UTF-8"
-          language="TypeScript"
-        />
+        <StatusBar />
       </div>
 
       <CommandPalette
@@ -391,6 +388,26 @@ export function AppShell() {
         notifications={notifications}
         onClose={() => setIsNotificationCenterOpen(false)}
       />
+
+      {isSettingsOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60"
+          onClick={() => setIsSettingsOpen(false)}
+        >
+          <div
+            className="absolute right-0 top-0 h-full w-full max-w-2xl overflow-auto bg-neutral-950 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setIsSettingsOpen(false)}
+              className="absolute right-4 top-4 z-10 rounded-lg p-2 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-100"
+            >
+              Close
+            </button>
+            <SettingsPanel />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

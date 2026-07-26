@@ -1,66 +1,48 @@
-import { useEffect, useState } from "react";
-import { eventBus } from "../core/events/EventBus";
+import { agentService } from "@/agents";
+import { useConnectionStatus } from "@/hooks/useConnectionStatus";
 
-type AgentStatus = "unknown" | "online" | "offline";
-
-type StatusBarProps = {
-  model?: string;
-  workspace?: string;
-  branch?: string;
-  encoding?: string;
-  language?: string;
+const STATUS_COLORS: Record<string, string> = {
+  connected: "text-emerald-400",
+  connecting: "text-yellow-400",
+  reconnecting: "text-orange-400",
+  error: "text-red-400",
+  disconnected: "text-neutral-500",
+  unknown: "text-neutral-500",
 };
 
-export function StatusBar({
-  model = "—",
-  workspace = "/workspace",
-  branch = "main",
-  encoding = "UTF-8",
-  language = "TypeScript",
-}: StatusBarProps) {
-  const [agentStatus, setAgentStatus] = useState<AgentStatus>("unknown");
+const STATUS_DOTS: Record<string, string> = {
+  connected: "bg-emerald-400",
+  connecting: "bg-yellow-400",
+  reconnecting: "bg-orange-400",
+  error: "bg-red-400",
+  disconnected: "bg-neutral-600",
+  unknown: "bg-neutral-600",
+};
 
-  useEffect(() => {
-    const unsub = eventBus.on("agent:status-changed", ({ status }) => {
-      setAgentStatus(status === "online" ? "online" : "offline");
-    });
-    return unsub;
-  }, []);
-
-  const statusColors: Record<AgentStatus, string> = {
-    unknown: "text-neutral-400",
-    online: "text-emerald-400",
-    offline: "text-red-400",
-  };
-
-  const statusDots: Record<AgentStatus, string> = {
-    unknown: "bg-neutral-400",
-    online: "bg-emerald-400",
-    offline: "bg-red-400",
-  };
-
-  const statusLabels: Record<AgentStatus, string> = {
-    unknown: "Agent: unknown",
-    online: "Agent: online",
-    offline: "Agent: offline",
-  };
+export function StatusBar() {
+  const { status, agentDisplayName } = useConnectionStatus();
+  const agentStatus = agentService.getStatus();
 
   return (
     <footer className="flex h-7 shrink-0 items-center justify-between border-t border-neutral-800 bg-neutral-950 px-3 text-xs text-neutral-500">
       <div className="flex min-w-0 items-center gap-4">
-        <span className={`flex items-center gap-1.5 ${statusColors[agentStatus]}`}>
-          <span className={`h-1.5 w-1.5 rounded-full ${statusDots[agentStatus]}`} />
-          {statusLabels[agentStatus]}
+        <span className={`flex items-center gap-1.5 ${STATUS_COLORS[status] ?? "text-neutral-500"}`}>
+          <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOTS[status] ?? "bg-neutral-600"}`} />
+          <span className="capitalize">{status}</span>
         </span>
 
-        <span className="hidden sm:inline">Model: {model}</span>
-        <span className="hidden md:inline">Workspace: {workspace}</span>
+        <span className="hidden sm:inline">Agent: {agentDisplayName}</span>
+        {agentStatus.model && (
+          <span className="hidden md:inline">Model: {agentStatus.model}</span>
+        )}
       </div>
 
       <div className="flex min-w-0 items-center gap-4">
-        <span className="hidden sm:inline">Branch: {branch}</span>
-        <span>{encoding}</span>
-        <span>{language}</span>
+        {agentStatus.workspace && (
+          <span className="hidden sm:inline">Workspace: {agentStatus.workspace}</span>
+        )}
+        <span>UTF-8</span>
+        <span>TypeScript</span>
       </div>
     </footer>
   );
